@@ -1,7 +1,7 @@
 "use client"
 
 import { join, leave, poll, sendSignal } from "@/lib/api"
-import { switchMicrophone } from "@/lib/media-devices"
+import { switchCamera, switchMicrophone } from "@/lib/media-devices"
 import { POLL_INTERVAL_MS } from "@/lib/presence"
 import { type PeerDot, type SignalMsg } from "@/lib/types"
 import { PeerSession, type DescType, type PeerControl } from "@/lib/webrtc"
@@ -321,6 +321,13 @@ export default function Home() {
     setLocalStream(new MediaStream(localStream.getTracks()))
   }
 
+  async function handleSwitchCamera(deviceId: string) {
+    const ps = peerRef.current
+    if (!ps || !localStream) return
+    await switchCamera(deviceId, ps, localStream)
+    setLocalStream(new MediaStream(localStream.getTracks()))
+  }
+
   function processSignal(sig: SignalMsg) {
     switch (sig.type) {
       case "request": {
@@ -430,7 +437,7 @@ export default function Home() {
         }
         setPeers(data.peers)
         for (const s of data.signals) processSignalRef.current(s)
-      } catch (err) {
+      } catch {
         if (!active) return
         consecutiveFailures += 1
 
@@ -556,6 +563,7 @@ export default function Home() {
           remoteStream={remoteStream}
           onEnd={endVideo}
           onSwitchMic={handleSwitchMic}
+          onSwitchCamera={handleSwitchCamera}
         />
       )}
     </main>

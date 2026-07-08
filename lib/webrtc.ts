@@ -201,6 +201,14 @@ export class PeerSession {
     await sender.replaceTrack(track)
   }
 
+  async replaceVideoTrack(track: MediaStreamTrack): Promise<void> {
+    const sender = this.pc.getSenders().find((s) => s.track?.kind === "video")
+    if (!sender) {
+      throw new Error("no video sender")
+    }
+    await sender.replaceTrack(track)
+  }
+
   stopVideo() {
     if (this.localStream) {
       for (const track of this.localStream.getTracks()) track.stop()

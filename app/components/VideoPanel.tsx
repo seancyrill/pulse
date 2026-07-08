@@ -1,8 +1,8 @@
 "use client"
 
 import DeviceSettings from "@/app/components/DeviceSettings"
-import { setAudioOutput } from "@/lib/media-devices"
 import { useMediaDevices } from "@/hooks/useMediaDevices"
+import { setAudioOutput } from "@/lib/media-devices"
 import { useEffect, useRef, useState } from "react"
 
 function useStreamRef(stream: MediaStream | null) {
@@ -22,11 +22,13 @@ export default function VideoPanel({
   remoteStream,
   onEnd,
   onSwitchMic,
+  onSwitchCamera,
 }: {
   localStream: MediaStream | null
   remoteStream: MediaStream | null
   onEnd: () => void
   onSwitchMic: (deviceId: string) => Promise<void>
+  onSwitchCamera: (deviceId: string) => Promise<void>
 }) {
   const localRef = useStreamRef(localStream)
   const remoteRef = useStreamRef(remoteStream)
@@ -34,8 +36,11 @@ export default function VideoPanel({
   const {
     microphones,
     speakers,
+    cameras,
     selectedMicId,
     setSelectedMicId,
+    selectedCameraId,
+    setSelectedCameraId,
     selectedSpeakerId,
     setSelectedSpeakerId,
     speakerSupported,
@@ -43,6 +48,7 @@ export default function VideoPanel({
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [switchingMic, setSwitchingMic] = useState(false)
+  const [switchingCamera, setSwitchingCamera] = useState(false)
   const [deviceError, setDeviceError] = useState<string | null>(null)
 
   const [muted, setMuted] = useState(() => {
@@ -87,6 +93,20 @@ export default function VideoPanel({
       setDeviceError("Couldn't switch microphone.")
     } finally {
       setSwitchingMic(false)
+    }
+  }
+
+  async function handleCameraChange(deviceId: string) {
+    if (!deviceId || deviceId === selectedCameraId || switchingCamera) return
+    setDeviceError(null)
+    setSwitchingCamera(true)
+    setSelectedCameraId(deviceId)
+    try {
+      await onSwitchCamera(deviceId)
+    } catch {
+      setDeviceError("Couldn't switch camera.")
+    } finally {
+      setSwitchingCamera(false)
     }
   }
 
@@ -166,12 +186,16 @@ export default function VideoPanel({
           onClose={() => setSettingsOpen(false)}
           microphones={microphones}
           speakers={speakers}
+          cameras={cameras}
           selectedMicId={selectedMicId}
+          selectedCameraId={selectedCameraId}
           selectedSpeakerId={selectedSpeakerId}
           speakerSupported={speakerSupported}
           switchingMic={switchingMic}
+          switchingCamera={switchingCamera}
           deviceError={deviceError}
           onMicChange={(deviceId) => void handleMicChange(deviceId)}
+          onCameraChange={(deviceId) => void handleCameraChange(deviceId)}
           onSpeakerChange={(deviceId) => void handleSpeakerChange(deviceId)}
         />
       </div>

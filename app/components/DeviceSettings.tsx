@@ -7,24 +7,32 @@ export default function DeviceSettings({
   onClose,
   microphones,
   speakers,
+  cameras,
   selectedMicId,
+  selectedCameraId,
   selectedSpeakerId,
   speakerSupported,
   switchingMic,
+  switchingCamera,
   deviceError,
   onMicChange,
+  onCameraChange,
   onSpeakerChange,
 }: {
   open: boolean
   onClose: () => void
   microphones: MediaDeviceOption[]
   speakers: MediaDeviceOption[]
+  cameras: MediaDeviceOption[]
   selectedMicId: string
+  selectedCameraId: string
   selectedSpeakerId: string
   speakerSupported: boolean
   switchingMic: boolean
+  switchingCamera: boolean
   deviceError: string | null
   onMicChange: (deviceId: string) => void
+  onCameraChange: (deviceId: string) => void
   onSpeakerChange: (deviceId: string) => void
 }) {
   if (!open) return null
@@ -62,6 +70,26 @@ export default function DeviceSettings({
               <option value="">No microphones found</option>
             ) : (
               microphones.map((device) => (
+                <option key={device.deviceId} value={device.deviceId}>
+                  {device.label}
+                </option>
+              ))
+            )}
+          </select>
+        </label>
+
+        <label className="mb-3 block">
+          <span className="mb-1.5 block text-xs text-zinc-400">Camera</span>
+          <select
+            value={selectedCameraId}
+            disabled={switchingCamera || cameras.length === 0}
+            onChange={(e) => onCameraChange(e.target.value)}
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-400 disabled:opacity-50"
+          >
+            {cameras.length === 0 ? (
+              <option value="">No cameras found</option>
+            ) : (
+              cameras.map((device) => (
                 <option key={device.deviceId} value={device.deviceId}>
                   {device.label}
                 </option>
