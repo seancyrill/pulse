@@ -7,7 +7,7 @@ export type PeerControl =
   | "video-cancel"
   | "video-end"
 
-interface PeerCallbacks {
+type PeerCallbacks = {
   onSignal: (type: DescType, payload: string) => void
   onChat: (text: string) => void
   onControl: (ctrl: PeerControl) => void
@@ -15,6 +15,8 @@ interface PeerCallbacks {
   onConnectionState: (state: RTCPeerConnectionState) => void
   onChannelOpen: () => void
 }
+
+type WireMessage = { t: "msg"; text: string } | { t: "ctrl"; ctrl: PeerControl }
 
 const ICE_CONFIG: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -83,24 +85,14 @@ export class PeerSession {
         } else if (msg.t === "ctrl" && typeof msg.ctrl === "string") {
           this.cb.onControl(msg.ctrl as PeerControl)
         }
-      } catch {}
+      } catch (err) {
+        console.error("[webrtc] addIceCandidate FAILED:", err)
+      }
     }
   }
 
   async handleSignal(type: DescType, payload: string) {
     if (this.closed) return
-
-    // IMPROVEMENT: guard the parse. `payload` is a string straight out of
-    // the Signal table — nothing upstream guarantees it's valid JSON (a
-    // malformed payload, intentional or not, used to throw a SyntaxError
-    // into an unhandled promise rejection here and silently wedge the
-    // connection with no visible error). Bail out loudly-but-safely on
-    // bad input instead.
-    //
-    // Typed as the union of what `type` can actually mean, rather than
-    // `unknown` + blind casts below — `type` already tells us which one
-    // we're holding, so the cast is narrowing within a known shape, not
-    // asserting into the dark.
     let data: RTCIceCandidateInit | RTCSessionDescriptionInit
     try {
       data = JSON.parse(payload) as
@@ -151,7 +143,9 @@ export class PeerSession {
     for (const candidate of queued) {
       try {
         await this.pc.addIceCandidate(candidate)
-      } catch {}
+      } catch (err) {
+        console.error("[webrtc] addIceCandidate FAILED (flush):", err)
+      }
     }
   }
 
@@ -163,7 +157,7 @@ export class PeerSession {
     this.safeSend({ t: "ctrl", ctrl })
   }
 
-  private safeSend(obj: unknown /* change later */) {
+  private safeSend(obj: WireMessage) {
     if (this.dc && this.dc.readyState === "open") {
       this.dc.send(JSON.stringify(obj))
     }
@@ -216,7 +210,9 @@ export class PeerSession {
         if (sender.track) {
           try {
             this.pc.removeTrack(sender)
-          } catch {}
+          } catch (err) {
+            console.error("[webrtc] addIceCandidate FAILED:", err)
+          }
         }
       }
       this.localStream = null
@@ -227,13 +223,15 @@ export class PeerSession {
     if (this.closed) return
     this.closed = true
     this.stopVideo()
+
     if (this.dc) {
-      try {
-        this.dc.close()
-      } catch {}
+      this.dc.close()
+    } else {
+      this.pc.close()
     }
     try {
-      this.pc.close()
-    } catch {}
+    } catch (err) {
+      console.error("[webrtc] addIceCandidate FAILED:", err)
+    }
   }
 }
