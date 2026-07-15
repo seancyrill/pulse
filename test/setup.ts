@@ -5,6 +5,6 @@ import { createMockPeerConnection } from "./mocks/rtcPeerConnection"
 vi.stubGlobal(
   "RTCPeerConnection",
   vi.fn(function () {
-    return createMockPeerConnection()
+    return createMockPeerConnection() as unknown as RTCPeerConnection
   }),
 )

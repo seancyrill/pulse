@@ -33,7 +33,7 @@ export function createMockPeerConnection() {
       pc.remoteDescription = desc
       pc.signalingState = desc.type === "offer" ? "have-remote-offer" : "stable"
     }),
-    addIceCandidate: vi.fn(async () => {}),
+    addIceCandidate: vi.fn(async (_candidate: RTCIceCandidateInit) => {}),
     addTrack: vi.fn(),
     removeTrack: vi.fn(),
     getSenders: vi.fn(() => [] as RTCRtpSender[]),
@@ -41,5 +41,5 @@ export function createMockPeerConnection() {
     close: vi.fn(),
   }
 
-  return pc as unknown as RTCPeerConnection & typeof pc
+  return pc
 }

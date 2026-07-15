@@ -225,13 +225,12 @@ export class PeerSession {
     this.stopVideo()
 
     if (this.dc) {
-      this.dc.close()
-    } else {
-      this.pc.close()
+      try {
+        this.dc.close()
+      } catch {}
     }
     try {
-    } catch (err) {
-      console.error("[webrtc] addIceCandidate FAILED:", err)
-    }
+      this.pc.close()
+    } catch {}
   }
 }
